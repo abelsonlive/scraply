@@ -110,7 +110,7 @@ scraply <- function(urls, fx,
         df$chunk_html <- scrape(url=df$url, headers=TRUE, parse=FALSE)
 
         # apply the parsing function to the resulting html pages
-        chunk_dfs <- dlply(to_parse, .(url) parse_and_handle_errors)
+        chunk_dfs <- dlply(to_parse, .(url), parse_and_handle_errors)
 
         output <- reducer(chunk_dfs, sort=FALSE)
 
