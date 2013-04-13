@@ -1,0 +1,19 @@
+Package: scraply
+Maintainer: Brian Abelson <brianabelson@gmail.com>
+Author: Brian Abelson <brianabelson@gmail.com>
+Version: 1.0
+License: MIT
+Title: 
+Description: Tools for making scraping easier in R
+Depends:
+    R (>= 2.15.1),
+    RCurl,
+    XML,
+    plyr
+Suggests:
+    stringr
+Collate:
+    'ahref.R'
+    'scraply.R'
+    'tree2node.R'
+    'url2tree.R'
