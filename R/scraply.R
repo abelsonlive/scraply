@@ -94,8 +94,7 @@ scraply <- function(urls, fx,
         df$html <- getURL(df$url)
 
         # apply the parsing function to the resulting html pages
-        return(ddply(df, .(url), parse_and_handle_errors))
-        Sys.sleep(sleep)
+        ddply(df, .(url), parse_and_handle_errors)
     }
 
     reducer <- function(df_list) {

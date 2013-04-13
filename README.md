@@ -14,16 +14,9 @@ Its primary purpose is to apply a scraping function across a list of urls while 
 
 ####scraply in action:####
 
-1. First we're going to write a function to scrape one page. In this case, we want to get all the keywords associated with a movie on imdb.com given its imdb id.
+1. First we're going to write a function to parse one html tree. In this case, we want to get all the keywords associated with a movie on imdb.com given its imdb id.
     ```
-    imdb_keywords <- function(imdb_id) {
-
-        # create the url
-        the_url <- paste0("http://www.imdb.com/title/", imdb_id, "/keywords")
-
-        # url2tree downloads an html page associated with the_url and converts into a navigable html tree
-        tree <- url2tree(the_url)
-
+    imdb_keywords <- function(tree) {
         # tree2node constructs an xpath query (in this case: '//*[@class="keyword"]/a')
         # and then runs it through getNodeSet in the 'XML' package
         nodes <- tree2node(tree, select='class="keyword"', children="a")
@@ -34,10 +27,17 @@ Its primary purpose is to apply a scraping function across a list of urls while 
         return(keywords)
     }
     ```
-2. Now we're going to use ``scraply`` to run this scraper across multiple imdb ids. We're going to purposefully insert erroneous imdb ids to see how ``scraply`` handles these cases.
+2. Now we're going to use ``scraply`` to run this scraper across multiple urls. We're going to purposefully insert erroneous urls to see how ``scraply`` handles these cases.
     ```
     imdb_ids <- c("tt0057012", "tt0000000", "tt0083946", "tt0089881", "NOT AN IMDB ID")
-    data <- scraply(imdb_ids, imdb_keywords, sleep=0.1)
+    urls <- paste0("http://www.imdb.com/title/", imdb_ids, "/keywords")
+    imdb_keywords <- function(tree) {
+        nodes <- tree2node(tree, select='class="keyword"', children="a")
+        keywords <- ldply(nodes, ahref)
+        return(keywords)
+    }
+    data <- scraply(urls, imdb_keywords, sleep=0.1)
+
     # check errors
     data[data$error==1,]
     ```
@@ -47,9 +47,7 @@ Its primary purpose is to apply a scraping function across a list of urls while 
     install_github("scraply", "abelsonlive")
     library("scraply")
 
-    imdb_keywords <- function(imdb_id) {
-        the_url <- paste0("http://www.imdb.com/title/", imdb_id, "/keywords")
-        tree <- url2tree(the_url)
+    imdb_keywords <- function(tree) {
         nodes <- tree2node(tree, select='class="keyword"', children="a")
         keywords <- ldply(nodes, ahref)
         return(keywords)
