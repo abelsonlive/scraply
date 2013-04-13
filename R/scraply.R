@@ -24,7 +24,7 @@
 #' # see example in the README
 scraply <- function(urls, fx,
                     format="html",
-                    chunk_size=8,
+                    chunk_size=1,
                     sleep=0.01, emr=FALSE,
                     clusterObject=NULL) {
 
@@ -39,22 +39,24 @@ scraply <- function(urls, fx,
     generate_input_list <- function(input_urls) {
 
     # generate ids to sort on
-        n <- length(input_urls)
-        sort <- 1:n
+    n <- length(input_urls)
+    sort <- 1:n
 
-        # generate list of chunks of urls to scrape
-        chunks <- seq(1,n,chunk_size)
-        n_chunks <- length(chunks)
+    # generate list of chunks of urls to scrape
 
-        list <- vector("list", n_chunks)
-        for (i in 1:n_chunks) {
+    chunks <- seq(1,n,chunk_size)
+    n_chunks <- length(chunks)
+
+    list <- vector("list", n_chunks)
+    for (i in 1:n_chunks) {
+        if(i==n_chunks) {
+            the_chunk <- chunks[i]:n
+        } else {
             the_chunk <- chunks[i]:(chunks[i+1]-1)
-            if(i==n_chunks) {
-                the_chunk <- chunks[i]:n
-            }
-            list[[i]] <- data.frame(sort = sort[the_chunk], url = input_urls[the_chunk], stringsAsFactors=F)
         }
-        return(list)
+        list[[i]] <- data.frame(sort = sort[the_chunk], url = input_urls[the_chunk], stringsAsFactors=F)
+    }
+    return(list)
     }
 
     # create function wrapper
