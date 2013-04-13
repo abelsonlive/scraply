@@ -59,7 +59,25 @@ Its primary purpose is to apply a scraping function across a list of urls while 
     # can you guess what these movies are???
     data[data$error==0,]
     ```
+4. Run ``scraply`` on Amazon's EMR:
+    ```
+    library("devtools")
+    install_github("scraply", "abelsonlive")
+    library("scraply")
+    library("segue")
+    setCredentials("AWS_ACCESS_KEY_ID", "Iy0O4V/OF3v7erwUHj3O0rBQEwUXCRiAyIKLj+G3")
+    myCluster <- createCluster(2)
 
+    imdb_keywords <- function(tree) {
+        nodes <- tree2node(tree, select='class="keyword"', children="a")
+        keywords <- ldply(nodes, ahref)
+        return(keywords)
+    }
+
+    imdb_ids <- c("tt0057012", "tt0000000", "tt0083946", "tt0089881", "NOT AN IMDB ID")
+    data <- scraply(imdb_ids, imdb_keywords, sleep=0.1, emr=TRUE, clusterObject=myCluster)
+    stopCluster(myCluster)
+    ```
 ### notes: ###
 * scraply is in active development and many more features and functions are in the works.
 * suggestions / forks / pull requests encouraged!
