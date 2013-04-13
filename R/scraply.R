@@ -26,8 +26,8 @@ scraply <- function(urls, fx,
                     format="html",
                     chunk_size=8,
                     sleep=0.01, emr=FALSE,
-                    clusterObject=NULL)
-    ) {
+                    clusterObject=NULL) {
+
     require("scrapeR")
     require("plyr")
     require("XML")
