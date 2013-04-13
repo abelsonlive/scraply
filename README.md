@@ -65,7 +65,7 @@ Its primary purpose is to apply a scraping function across a list of urls while 
     install_github("scraply", "abelsonlive")
     library("scraply")
     library("segue")
-    setCredentials("AWS_ACCESS_KEY_ID", "Iy0O4V/OF3v7erwUHj3O0rBQEwUXCRiAyIKLj+G3")
+    setCredentials("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
     myCluster <- createCluster(2)
 
     imdb_keywords <- function(tree) {
@@ -78,6 +78,7 @@ Its primary purpose is to apply a scraping function across a list of urls while 
     data <- scraply(imdb_ids, imdb_keywords, sleep=0.1, emr=TRUE, clusterObject=myCluster)
     stopCluster(myCluster)
     ```
+
 ### notes: ###
 * scraply is in active development and many more features and functions are in the works.
 * suggestions / forks / pull requests encouraged!
