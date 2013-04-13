@@ -23,62 +23,60 @@
 #' @examples
 #' # see example in the README
 scraply <- function(urls, fx,
-                    format="html",
                     chunk_size=1,
                     sleep=0.01, emr=FALSE,
                     clusterObject=NULL) {
 
-    require("scrapeR")
     require("plyr")
     require("XML")
     require("RCurl")
 
     #___________________________________________________#
-
-    # gen input data
-    generate_input_list <- function(input_urls) {
-
-    # generate ids to sort on
-    n <- length(input_urls)
-    sort <- 1:n
-
-    # generate list of chunks of urls to scrape
-
-    chunks <- seq(1,n,chunk_size)
-    n_chunks <- length(chunks)
-
-    list <- vector("list", n_chunks)
-    for (i in 1:n_chunks) {
-        if(i==n_chunks) {
-            the_chunk <- chunks[i]:n
-        } else {
-            the_chunk <- chunks[i]:(chunks[i+1]-1)
-        }
-        list[[i]] <- data.frame(sort = sort[the_chunk], url = input_urls[the_chunk], stringsAsFactors=F)
-    }
-    return(list)
-    }
-
-    # create function wrapper
-     run_fx <- function(x, the_fx) {
+    # function wrapper
+    run_fx <- function(x, the_fx) {
         the_function <- match.fun(the_fx)
         the_function(x)
     }
 
-    # applying this function to html trees and handle errors
+    # function for generating input data
+    generate_input_list <- function(input_urls) {
+
+        # generate ids to sort on
+        n <- length(input_urls)
+        sort <- 1:n
+
+        if (chunk_size>n){
+            chunk_size <- ceiling(n/2)
+        }
+
+        # generate list of chunks of urls to scrape
+        chunks <- seq(1,n,chunk_size)
+        n_chunks <- length(chunks)
+
+        list <- vector("list", n_chunks)
+        for (i in 1:n_chunks) {
+            if(i==n_chunks) {
+                the_chunk <- chunks[i]:n
+            } else {
+                the_chunk <- chunks[i]:(chunks[i+1]-1)
+            }
+            list[[i]] <- data.frame(sort = sort[the_chunk], url = input_urls[the_chunk], stringsAsFactors=F)
+        }
+        return(list)
+    }
+
+    # function for parsing html, applying function, and handling errors
     parse_and_handle_errors <- function(d) {
         # CONVERT HTML TO PARSEABLE TREE
-        if(format=="html"){
-            tree <- htmlTreeParse(d$html, useInternalNodes=TRUE)
-        }
-        if(format=="xml"){
-            tree <- xmlTreeParse(d$html, useInternalNodes=TRUE)
-        }
+        tree <- htmlTreeParse(d$html, useInternalNodes=TRUE)
+
+        # RUN THE FUNCTION
         output <- try(run_fx(x=tree, the_fx=fx), TRUE)
-        # HANDLE ERRORS
-        if (class(output)=='try-error') {
+
+        # HANDLE ALL THE ERRORS
+        if (class(output)=='try-error'| is.null(output) | nrow(output)==0 | length(output)==0) {
             cat("!\n")
-            warning("had a problem scraping", y, "\n")
+            warning("had a problem scraping ", d$url, "\n")
             df <- data.frame(error = 1, stringsAsFactors=F)
             df$sort <- d$sort
          } else {
@@ -89,7 +87,18 @@ scraply <- function(urls, fx,
         return(df)
     }
 
-    reducer <- function(df_list, sort) {
+    # function for running
+    runner <-  function(df) {
+
+        # download a chunk of urls
+        df$html <- getURL(df$url)
+
+        # apply the parsing function to the resulting html pages
+        return(ddply(df, .(url), parse_and_handle_errors))
+        Sys.sleep(sleep)
+    }
+
+    reducer <- function(df_list) {
         # order dfs from smallest number of columns to greatest number of columns
         # this will ensure that additional columns are filled in by rbind.fill
         col_list <- unlist(lapply(df_list, ncol))
@@ -99,50 +108,32 @@ scraply <- function(urls, fx,
         output <- rbind.fill(df_list)
 
         # reorder by sort ids, discard
-        if(sort) {
-          output <- output[order(output$sort),]
-          output$sort <- NULL
-        }
-        return(output)
-    }
-
-    #
-    runner <-  function(df) {
-        # take a
-        df$chunk_html <- scrape(url=df$url, headers=TRUE, parse=FALSE)
-
-        # apply the parsing function to the resulting html pages
-        chunk_dfs <- dlply(df, .(url), parse_and_handle_errors)
-
-        output <- reducer(chunk_dfs, sort=FALSE)
-
+        output <- output[order(output$sort),]
+        output$sort <- NULL
         return(output)
     }
 
 
-     #___________________________________________________#
+    #___________________________________________________#
 
     # initialize data
     list <- generate_input_list(urls)
+
     # announce scraping
     cat("now scraping", length(urls), "pages,", chunk_size, "at a time...\n")
     # start scraping and logging errors
     if(emr) {
+        require("segue")
         if(is.null(clusterObject)) {
             stop("must provide clusterObject initialized from segue to run on EMR")
         }
         cat("using emr...\n")
         output <- emrlapply(clusterObject, list, runner)
     } else {
-        cat("using llply...\n")
         output <- llply(list, runner, .progress="text")
+
     }
     cat("reducing output...\n")
-    clean_output <- reducer(raw_output, sort=TRUE)
 
-    # return
-    return(clean_output)
-
-    # sleep
-    Sys.sleep(sleep)
+    reducer(output)
 }
