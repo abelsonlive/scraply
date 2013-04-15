@@ -69,16 +69,20 @@ Its primary purpose is to apply a scraping function across a list of urls while 
     library("segue")
     setCredentials("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
     myCluster <- createCluster(2)
-
+    
+    imdb_ids <- c("tt0057012", "tt0000000", "tt0083946", "tt0089881", "NOT AN IMDB ID")
+    urls <- paste0("http://www.imdb.com/title/", imdb_ids, "/keywords")
+    
     imdb_keywords <- function(tree) {
         nodes <- tree2node(tree, select='class="keyword"', children="a")
         keywords <- ldply(nodes, ahref)
         return(keywords)
     }
 
-    imdb_ids <- c("tt0057012", "tt0000000", "tt0083946", "tt0089881", "NOT AN IMDB ID")
-    data <- scraply(imdb_ids, imdb_keywords, sleep=0.1, emr=TRUE, clusterObject=myCluster)
+    data <- scraply(urls, imdb_keywords, sleep=0.1, emr=TRUE, clusterObject=myCluster)
     stopCluster(myCluster)
+    data[data$error==1,]
+    data[data$error==0,]
     ```
 
 ### notes: ###
