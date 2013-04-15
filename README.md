@@ -1,7 +1,7 @@
 # scraply#
 ##_error-proof scraping in R_##
-_scraply_ is a set of tools for writing error-proof scrapers quickly and easily in R.
-Its primary purpose is to apply a scraping function across a list of urls while handling and logging errors. ([documentation](https://github.com/abelsonlive/scraply/blob/master/docs/scraply-manual.pdf?raw=true))
+``scraply`` is a tool for writing error-proof scrapers quickly and easily in R.
+Its primary purpose is to apply a scraping function across a list of urls while handling and logging errors.
 
 ### contact: ###
 [@brianabelson](http://www.twitter.com/brianabelson)
@@ -47,14 +47,16 @@ Its primary purpose is to apply a scraping function across a list of urls while 
     install_github("scraply", "abelsonlive")
     library("scraply")
 
+    imdb_ids <- c("tt0057012", "tt0000000", "tt0083946", "tt0089881", "NOT AN IMDB ID")
+    urls <- paste0("http://www.imdb.com/title/", imdb_ids, "/keywords")
+    
     imdb_keywords <- function(tree) {
         nodes <- tree2node(tree, select='class="keyword"', children="a")
         keywords <- ldply(nodes, ahref)
         return(keywords)
     }
 
-    imdb_ids <- c("tt0057012", "tt0000000", "tt0083946", "tt0089881", "NOT AN IMDB ID")
-    data <- scraply(imdb_ids, imdb_keywords, sleep=0.1)
+    data <- scraply(urls, imdb_keywords, sleep=0.1)
     data[data$error==1,]
     # can you guess what these movies are???
     data[data$error==0,]
