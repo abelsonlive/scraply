@@ -16,4 +16,3 @@ Collate:
     'ahref.R'
     'scraply.R'
     'tree2node.R'
-    'url2tree.R'
